@@ -1,0 +1,16 @@
+[ Concept ] <-- n .. m --> [ Labeling ]  <-- n .. m --> [ Label ]
+
+[ Concept ] <-- 1 .. n --> [ Match ]
+
+[ Concept ] <-- relation --> [ Concept ]
+
+
+[ Label ] <-- relation --> [ Label ]
+
+
+[ Collection ] <- n .. m -> [ Concept ]
+[ Collection ] <- n .. m -> [ Collection ]
+
+
+[ Note ] <-- n .. 1 --> [ Concept ]
+[ Note ] <-- n .. 1 --> [ Label ]
