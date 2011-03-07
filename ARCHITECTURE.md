@@ -1,7 +1,7 @@
 Introduction and Goals
 ======================
 
-iQvoc is a web-based vocabulary management framework which provides an
+iQvoc is a Web-based vocabulary management framework which provides an
 intuitive user interface while Semantic Web interoperability.
 
 iQvoc supports vocabularies that are common to many knowledge organization
@@ -25,7 +25,7 @@ vocabularies:
 Context
 =======
 
-iQvoc is actively being developed by innoQ[ownership is evil?] and is being
+iQvoc is actively being developed by innoQ[ownership is evil!?] and is being
 employed in a variety of diverse[?] projects.
 
 
@@ -43,18 +43,16 @@ Web API
 Resources
 ---------
 
-/<language>
+[incomplete; major routes only]
 
-    /concepts
-        /<ID>
-    /labels
-        /<ID>
-    /collections
-    /user_session
-        POST  log in
+    /<language>
+        /concepts
+            /<ID>
+        /labels
+            /<ID>
+        /collections
 
-/search
-/schema
+    /search
 
 
 Representations
@@ -78,8 +76,7 @@ Each concept may have a preferred label per language, as well as any number of
 alternative terms or synonyms. It can be described by a variety of notes and
 external references (matches).
 
-Concepts can be arranged in hierarchies, described by a variety of notes, and
-each concept .
+Concepts can be arranged in hierarchies as well as grouped in collections.
 
 High-level Overview
 -------------------
@@ -100,7 +97,7 @@ High-level Overview
       +--------+                +----------+
         n .. m                    relation
 
-(generated with graph-easy from diagrams/main.txt)
+(generated with *graph-easy* from `diagrams/main.txt`)
 
 
 Components
@@ -109,6 +106,30 @@ Components
 iQvoc makes use of Rails Engines to provide extensibility and reuse. Individual
 projects can make use of the iQvoc framework and customize default settings by
 extending the Iqvoc module (lib/iqvoc.rb).
+
+NB: Due to limitations of Ruby on Rails 3.0, iQvoc applications currently extend
+the iQvoc framework rather than using it as a dependency. This will be revisited
+in future versions, as engines are to become more flexible in Ruby on Rails 3.1.
+
+Client-side
+-----------
+
+iQvoc's user interface employs progressive enhancements, providing a variety of
+JavaScript widgets to simplify navigation and data entry:
+
+* treeview
+  provides a dynamic tree navigation of hierarchical constructs
+* datepicker
+  simplifies entry of dates
+* autocomplete
+  provides in-place suggestions when entering references
+
+Configuration
+-------------
+
+* SKOS vs. SKOS-XL
+  In basic SKOS mode each label is connected to only a single concept.
+  When choosing SKOS-XL, each label may be connected to multiple concepts.
 
 
 User Roles
@@ -151,6 +172,8 @@ lib/tasks/import.rake; `rake iqvoc_spez:import:file FILE=data.nt`).
 Process Flow
 ============
 
+[as usual with Rails]
+
 
 Deployment
 ==========
@@ -160,3 +183,5 @@ Deployment
 
 Glossary
 ========
+
+[redundant?]
