@@ -97,7 +97,7 @@ High-level Overview
       +--------+                +----------+
         n .. m                    relation
 
-(generated with *graph-easy* from `diagrams/main.txt`)
+(generated with *graph-easy* from `diagrams/models.txt`)
 
 
 Components
