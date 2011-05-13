@@ -34,6 +34,7 @@ class BrowseConceptsAndLabelsTest < ActionDispatch::IntegrationTest
           :origin => "_l00#{i}", :value => name, :language => lang,
           :published_at => 2.days.ago)
       Iqvoc::Concept.pref_labeling_class.create(:owner => concept, :target => label)
+      concept.reload
       concept
     }
   end

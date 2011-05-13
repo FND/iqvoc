@@ -31,7 +31,7 @@ class ConceptTest < ActiveSupport::TestCase
   test "should not save concept with empty preflabel" do
     Factory.create(:concept).save_with_full_validation! # Is the factory working as expected?
     assert_raise ActiveRecord::RecordInvalid do
-      Factory.create(:concept, :pref_labelings => []).save_with_full_validation!
+      Factory.create(:concept, :labelings => []).save_with_full_validation!
     end
   end
 
@@ -45,7 +45,7 @@ class ConceptTest < ActiveSupport::TestCase
   end
 
   test "concepts without pref_labels should be saveable but not publishable" do
-    concept =  Factory.create(:concept, :pref_labelings => [])
+    concept =  Factory.create(:concept, :labelings => [])
     assert_equal [], concept.pref_labels
     assert concept.valid?
     assert !concept.valid_with_full_validation?
@@ -63,7 +63,7 @@ class ConceptTest < ActiveSupport::TestCase
   test "concept shouldn't have more then one pref label of the same language" do
     concept = Factory.create(:concept)
     assert concept.valid?
-    concept.pref_labelings << Factory.build(:pref_labeling)
+    concept.labelings << Factory.build(:pref_labeling)
     assert 2, concept.pref_labelings.size
     assert_equal concept.pref_labelings.first.target.language, concept.pref_labelings.second.target.language
     assert !concept.valid?
@@ -81,7 +81,7 @@ class ConceptTest < ActiveSupport::TestCase
   end
 
   test "labelings_by_text setter" do
-    concept = Factory.build(:concept, :pref_labelings => [])
+    concept = Factory.build(:concept, :labelings => [])
 
     concept.labelings_by_text = {
       Iqvoc::Concept.pref_labeling_class_name.to_relation_name => {Iqvoc::Concept.pref_labeling_languages.first => 'A new label'}

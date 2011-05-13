@@ -25,8 +25,8 @@ class ConceptTest < ActionDispatch::IntegrationTest
 
   test "showing published concept" do
     visit "/en/concepts/#{@concept.origin}.html"
-    assert page.has_content?("#{@concept.origin}")
-    assert page.has_content?("#{@concept.pref_label}")
+    assert page.has_content?(rdf_url("#{@concept.origin}"))
+    assert page.has_content?("#{@concept.pref_label}"), "Couldn't find prefLabel '#{@concept.pref_label}' on concepts page."
   end
 
 end

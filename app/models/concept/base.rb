@@ -39,11 +39,13 @@ class Concept::Base < ActiveRecord::Base
   # There must always be a prefLabel in the primary thesaurus language
   validate :on => :update do |concept|
     if @full_validation
-      labels = concept.pref_labels.select{|l| l.published?}
-      if labels.count == 0
-        errors.add(:base, I18n.t("txt.models.concept.no_pref_label_error"))
-      elsif not labels.map(&:language).include?(Iqvoc::Concept.pref_labeling_languages.first.to_s)
-        errors.add(:base, I18n.t("txt.models.concept.main_pref_label_language_missing_error"))
+      # We have many sources a prefLabel can be defined in
+      published_pref_labels = (concept.pref_labels +
+          concept.send(Iqvoc::Concept.pref_labeling_class_name.to_relation_name).map(&:target)).select{|l| l.published?}
+      if published_pref_labels.size == 0
+        errors.add(Iqvoc::Concept.pref_labeling_class_name.to_relation_name, I18n.t("txt.models.concept.no_pref_label_error"))
+      elsif !published_pref_labels.map(&:language).map(&:to_s).include?(Iqvoc::Concept.pref_labeling_languages.first.to_s)
+        errors.add(Iqvoc::Concept.pref_labeling_class_name.to_relation_name, I18n.t("txt.models.concept.main_pref_label_language_missing_error"))
       end
     end
   end
@@ -51,15 +53,14 @@ class Concept::Base < ActiveRecord::Base
   # There may never be two different prefLabels of the same language
   validate do |concept|
     # We have many sources a prefLabel can be defined in
-    pls = concept.pref_labelings.map(&:target) +
-      concept.send(Iqvoc::Concept.pref_labeling_class_name.to_relation_name).map(&:target) +
-      concept.labelings.select{|l| l.is_a?(Iqvoc::Concept.pref_labeling_class)}.map(&:target)
+    pls = concept.pref_labels +
+      concept.send(Iqvoc::Concept.pref_labeling_class_name.to_relation_name).map(&:target)
     languages = {}
     pls.each do |pref_label|
       lang = pref_label.language.to_s
       origin = (pref_label.origin || pref_label.id || pref_label.value).to_s
       if (languages.keys.include?(lang) && languages[lang] != origin)
-        errors.add(:pref_labelings, I18n.t("txt.models.concept.pref_labels_with_same_languages_error"))
+        errors.add(Iqvoc::Concept.pref_labeling_class_name.to_relation_name, I18n.t("txt.models.concept.pref_labels_with_same_languages_error"))
       end
       languages[lang] = origin
     end
@@ -165,29 +166,6 @@ class Concept::Base < ActiveRecord::Base
 
   # *** Labels/Labelings
 
-  has_many :pref_labelings,
-    :foreign_key => 'owner_id',
-    :class_name => Iqvoc::Concept.pref_labeling_class_name
-  # BEWARE: bla.pref_labels wont work, because a Rails bug will kill the
-  # nessacary type="..." condition! FIXME
-  has_many :pref_labels,
-    :through => :pref_labelings,
-    :source => :target
-
-
-  # {
-  #   "Labeling::SKOSXL::PrefLabel" => {
-  #     :de => [
-  #       [0] "Aal"
-  #     ]
-  #     },
-  #     "Labeling::SKOSXL::AltLabel" => {
-  #       :de => [
-  #         [0] "EuropaeischerFlussaal",
-  #         [1] "Flussaal"
-  #       ]
-  #     }
-  #   }
   Iqvoc::Concept.labeling_class_names.each do |labeling_class_name, languages|
     has_many labeling_class_name.to_relation_name,
       :foreign_key => 'owner_id',
@@ -263,7 +241,7 @@ class Concept::Base < ActiveRecord::Base
   #   :include => :pref_labels,
   #   :order => 'LOWER(labels.value)',
   #   :group => 'concepts.id'
-  scope :broader_tops, includes(:narrower_relations, :pref_labels).
+  scope :broader_tops, includes(:narrower_relations, :labelings => :target).
     where(:concept_relations => {:id => nil}, :labelings => {:type => Iqvoc::Concept.pref_labeling_class_name}).
     order("LOWER(#{Label::Base.table_name}.value)")
 
@@ -272,7 +250,7 @@ class Concept::Base < ActiveRecord::Base
     ])
 
   scope :with_pref_labels,
-    includes(:pref_labels).
+    includes(:labelings => :target).
     order("LOWER(#{Label::Base.table_name}.value)").
     where(:labelings => {:type => Iqvoc::Concept.pref_labeling_class_name}) # This line is just a workaround for a Rails Bug. TODO: Delete it when the Bug is fixed
 
@@ -301,6 +279,14 @@ class Concept::Base < ActiveRecord::Base
       self.send(relation_name).map{ |l| l.target.origin }.join(", ")
   end
 
+  def pref_labelings(published = false)
+    labelings.select{|l| l.is_a?(Iqvoc::Concept.pref_labeling_class) && (!published || l.target.published?)}
+  end
+
+  def pref_labels(published = false)
+    pref_labelings(published).map(&:target)
+  end
+
   # returns the (one!) preferred label of a concept for the requested language.
   # lang can either be a (lowercase) string or symbol with the (ISO ....) two letter
   # code of the language (e.g. :en for English, :fr for French, :de for German).
@@ -308,15 +294,15 @@ class Concept::Base < ActiveRecord::Base
   # (if you modify it, don't forget to save it afterwards!)
   def pref_label
     lang = I18n.locale.to_s
-    @cached_pref_labels ||= pref_labels.each_with_object({}) do |label, hash|
-      if hash[label.language]
-        Rails.logger.warn("Two pref_labels (#{hash[label.language]}, #{label}) for one language (#{label.language}). Taking the second one.")
+    @cached_pref_labels ||= pref_labels(true).each_with_object({}) do |label, hash|
+      if hash[label.language.to_s]
+        Rails.logger.warn("Two pref_labels (#{hash[label.language.to_s]}, #{label}) for one language (#{label.language.to_s}). Taking the second one.")
       end
       hash[label.language.to_s] = label
     end
     if @cached_pref_labels[lang].nil?
       # Fallback to the main language
-      @cached_pref_labels[lang] = pref_labels.by_language(Iqvoc::Concept.pref_labeling_languages.first.to_s).first
+      @cached_pref_labels[lang] = pref_labels.select{|l| l.language.to_s == Iqvoc::Concept.pref_labeling_languages.first.to_s}.first
     end
     @cached_pref_labels[lang]
   end

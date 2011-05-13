@@ -45,6 +45,8 @@ class SkosImportTest < ActiveSupport::TestCase
     ["_animal", "_cow", "_donkey", "_monkey"].each do |origin|
       concepts[origin] = Iqvoc::Concept.base_class.by_origin(origin).last
       assert_not_nil(concepts[origin], "Couldn't find concept '#{origin}'.")
+      concepts[origin].save_with_full_validation!
+
       assert concepts[origin].published?, "Concept '#{origin}' wasn't published."
     end
 
