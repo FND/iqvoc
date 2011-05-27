@@ -49,9 +49,16 @@ class SearchResultsController < ApplicationController
 
       query_size = params[:query].split(/\r\n/).size
 
+      # handle the special case where a collection was selected but no query
+      # term entered - in which case all collection members should be listed
+      if not params[:query].present? and params[:collection_origin].present?
+        @results = Iqvoc::Collection.base_class.
+            by_origin(params[:collection_origin]).includes(:concepts).last.
+            concepts.map { |c| c.pref_labelings }.flatten.
+            paginate(:page => params[:page], :per_page => 50)
       # @klass is only available if we're going to search using a specific class
       # it's not available if we're searching within all classes
-      if @klass
+      elsif @klass
         if @klass.forces_multi_query? || (@klass.supports_multi_query? && query_size > 1)
           @multi_query = true
           @results = @klass.multi_query(params)
