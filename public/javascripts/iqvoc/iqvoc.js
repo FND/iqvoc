@@ -81,10 +81,20 @@ var createNote = function(ev) {
 	// .attr("name", source.find("input[type=hidden]").attr("name").replace(/\[\d\]/, newNameCount));
 
 	if(!isUsageNote) {
-		clone.find("textarea")
-			.val("")
-			.attr("id", source.find("textarea").attr("id").replace(/_\d_/, newIdCount))
-			.attr("name", source.find("textarea").attr("name").replace(/\[\d\]/, newNameCount));
+		var _id = source.find("textarea").attr("id");
+		console.log("AAA", _id);
+		_id = _id.replace(/_\d_/, newIdCount);
+		console.log("BBB", _id);
+		var _name = source.find("textarea").attr("name");
+		console.log("CCC", _name);
+		_name = _name.replace(/\[\d\]/, newNameCount)
+		console.log("DDD", _name);
+		clone.find("textarea").val("").attr("id", _id).attr("name", _name);
+		var _el = clone.find("textarea");
+		console.log("EEE", _el.attr("name"), _el);
+		setTimeout(function() {
+			console.log("FFF", _el.attr("name"), _el);
+		}, 1000);
 	}
 	clone.find("select")
 		.attr("id", source.find("select").attr("id").replace(/_\d_/, newIdCount))
